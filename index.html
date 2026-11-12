@@ -443,6 +443,7 @@ footer{color:var(--muted);font-size:12px;margin-top:30px;text-align:center}
         <div class="field" id="edit-size-field"><label>Container Size</label><select id="e-size"><option value="40ft">40ft</option><option value="20ft">20ft</option><option value="45ft">45ft</option><option value="Others">Others</option></select></div>
         <div class="field" id="edit-class-field"><label>Classification</label><select id="e-class"><option value="Import/Bonded">Import/Bonded</option><option value="Auction">Auction</option><option value="Export">Export</option><option value="Others">Others</option></select></div>
         <div class="field"><label>Specific Sub-Type</label><input id="e-subtype" required></div>
+        <div class="field"><label>Entry Mode</label><select id="e-mode"><option value="Gate In">Gate In</option><option value="Barge In">Barge In</option></select></div>
         <div class="field"><label>Location</label><select id="e-loc"><option>Iddo Terminal</option><option>Ijora Annex</option><option>Exited Terminal</option></select></div>
         <div class="field"><label>Identifier / VIN / Container No</label><input id="e-identifier" required></div>
         <div class="field"><label>Client Name</label><input id="e-client" required></div>
@@ -882,7 +883,7 @@ function renderInventory() {
     if (loc && loc !== "Exited Terminal" && i.location !== loc) return false;
     if (cat && i.category !== cat) return false;
     if (search) {
-      var hay = (i.identifier + " " + i.client + " " + i.subtype + " " + i.bl + " " + (i.category === "Containers" ? (i.classification || "") : "") + " " + (i.driver || "") + " " + (i.remarks || "")).toLowerCase();
+      var hay = (i.identifier + " " + i.client + " " + i.subtype + " " + i.bl + " " + (i.entryMode || "") + " " + (i.category === "Containers" ? (i.classification || "") : "") + " " + (i.driver || "") + " " + (i.remarks || "")).toLowerCase();
       if (hay.indexOf(search) === -1) return false;
     }
     return true;
@@ -908,7 +909,7 @@ function renderInventory() {
       html += "<tr>" +
         "<td><b>" + (index + 1) + "<\/b><\/td>" +
         '<td><span class="pill blue">' + i.category + "<\/span>" + sizeText + classText + '<br><b style="color:var(--navy);font-size:12px">' + i.subtype + "<\/b><\/td>" +
-        "<td><b>" + i.identifier + '<\/b><br><small class="muted">' + i.entryMode + "<\/small><\/td>" +
+        "<td><b>" + i.identifier + '<\/b><br><small class="muted">' + (i.entryMode || "Gate In") + "<\/small><\/td>" +
         "<td>" + i.client + "<\/td>" +
         "<td>" + (i.bl || "-") + "<\/td>" +
         "<td><b>" + i.location + "<\/b><\/td>" +
@@ -938,6 +939,7 @@ function openDetailsModal(itemId) {
 
   document.getElementById("det-info-grid").innerHTML =
     '<div><span class="small muted">Consignment Category<\/span><br><b>' + item.category + "<\/b><\/div>" +
+    '<div><span class="small muted">Entry Mode<\/span><br><b>' + (item.entryMode || "Gate In") + "<\/b><\/div>" +
     containerFields +
     '<div><span class="small muted">Current Location<\/span><br><b>' + item.location + "<\/b><\/div>" +
     '<div><span class="small muted">Original Date In<\/span><br><b>' + formatCustomDate(item.dateIn) + "<\/b><\/div>" +
@@ -985,6 +987,7 @@ function openEditModal(itemId) {
   document.getElementById("e-size").value = item.size || "40ft";
   document.getElementById("e-class").value = item.classification || "Import/Bonded";
   document.getElementById("e-subtype").value = item.subtype || "";
+  document.getElementById("e-mode").value = item.entryMode || "Gate In";
   document.getElementById("e-loc").value = item.location;
   document.getElementById("e-identifier").value = item.identifier;
   document.getElementById("e-client").value = item.client;
@@ -1018,11 +1021,13 @@ function saveEdit(e) {
 
   var item = db.items.find(function(i) { return i.id === id; });
   if (item) {
+    var oldIdentifier = item.identifier;
     item.category = document.getElementById("e-cat").value;
     var isContainer = item.category === "Containers";
     item.size = isContainer ? document.getElementById("e-size").value : "";
     item.classification = isContainer ? document.getElementById("e-class").value : "";
     item.subtype = document.getElementById("e-subtype").value.trim();
+    item.entryMode = document.getElementById("e-mode").value;
     item.location = document.getElementById("e-loc").value;
     item.identifier = newIdentifier;
     item.client = document.getElementById("e-client").value.trim();
@@ -1033,10 +1038,29 @@ function saveEdit(e) {
     item.transport = document.getElementById("e-transport").value.trim();
     item.remarks = document.getElementById("e-remarks").value.trim();
 
+    if (item.history && item.history.length > 0 && item.history[0].action && item.history[0].action.indexOf("Arrived via ") === 0) {
+      item.history[0].action = "Arrived via " + item.entryMode + " at " + item.location;
+      item.history[0].date = item.dateIn;
+      item.history[0].driver = item.driver || "-";
+      item.history[0].vehicle = item.transport || "-";
+    }
+
+    (db.movements || []).forEach(function(m) {
+      if (m.item === oldIdentifier) {
+        m.item = newIdentifier;
+        m.category = item.category;
+        m.subtype = item.subtype;
+        m.client = item.client;
+        if (m.type === "Arrival") {
+          m.date = item.dateIn;
+        }
+      }
+    });
+
     item.history.push({
       action: "Record updated by Operations",
       date: new Date().toISOString().slice(0, 16),
-      notes: "Location: " + item.location + " | Status: " + item.status
+      notes: "Entry Mode: " + item.entryMode + " | Location: " + item.location + " | Status: " + item.status
     });
     saveDB();
     closeEditModal();
