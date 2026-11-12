@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Firebase Core Script -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<!-- Firebase Realtime Database Script -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mainland Bonded Terminal | Management Operations System</title>
+<style>
+:root{--navy:#112238;--green:#688229;--bg:#f4f6f9;--card:#fff;--ink:#1e293b;--muted:#64748b;--line:#cbd5e1;--soft:#edf4e3;--orange:#f26522}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Arial,Helvetica,sans-serif}
+header{background:var(--navy);color:#fff;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:10}
+.brand{display:flex;align-items:center;gap:16px}
+.brand-logo-container{background:#fff;padding:4px 10px;border-radius:8px;display:flex;align-items:center;justify-content:center;height:45px;min-width:56px}
+.brand-logo-container img{height:36px;width:auto;display:block}
+.logo-fallback{font-weight:900;color:var(--navy);font-size:18px;letter-spacing:1px}
+.brand b{font-size:18px;line-height:1.2;display:block}
+.brand small{display:block;color:#cbd5e1;font-size:12px;margin-top:2px}
+header .right{font-size:12px;color:#cbd5e1;text-align:right;display:flex;align-items:center;gap:15px}
+.shell{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 70px)}
+aside{background:#fff;border-right:1px solid var(--line);padding:16px 10px}
+.navgroup{font-size:10px;letter-spacing:1.2px;color:#94a3b8;font-weight:bold;padding:14px 12px 6px}
+nav button{width:100%;border:0;background:transparent;text-align:left;padding:10px 12px;border-radius:8px;color:#334155;cursor:pointer;font-size:13px;margin:2px 0}
+nav button.active,nav button:hover{background:var(--soft);color:#2d3b13;font-weight:bold}
+main{padding:28px;max-width:1600px;width:100%;margin:auto}
+h1{font-size:24px;margin:0 0 4px;color:#0f172a}h2{font-size:16px;margin:0 0 12px;color:#1e293b}h3{font-size:14px;margin:0 0 8px}
+.sub{color:var(--muted);margin:0 0 24px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.card.clickable{cursor:pointer;transition:transform 0.15s, border-color 0.15s;border:1px solid var(--green);background:#fafdf5}
+.card.clickable:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(104,130,41,0.15)}
+.metric{font-size:28px;font-weight:800;margin-top:6px;color:#0f172a}.muted{color:var(--muted)}.small{font-size:12px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.between{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.btn{border:1px solid #cbd5e1;background:#fff;color:#1e293b;padding:9px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff}.btn.dark{background:var(--navy);color:#fff;border-color:var(--navy)}.btn.warn{color:#b93815;border-color:#f1d0c5;background:#fef2f2}
+.btn.sm{padding:5px 9px;font-size:11px}
+input,select,textarea{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:9px 12px;font:inherit;background:#fff;color:var(--ink)}
+label{font-size:12px;color:#475569;font-weight:700;display:block;margin:0 0 6px}.field{min-width:160px;flex:1}.formgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}table{width:100%;border-collapse:collapse;min-width:750px}th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}th{background:#f8fafc;color:#475569;white-space:nowrap}tr:last-child td{border-bottom:0}
+.pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}.pill.green{background:#ecfccb;color:#3f6212}.pill.orange{background:#ffedd5;color:#9a3412}.pill.blue{background:#e0f2fe;color:#0369a1}.pill.gray{background:#f1f5f9;color:#475569}
+
+/* Section Routing (Fixed so only ONE active section ever shows at a time) */
+.section{display:none}
+.section.active{display:block}
+
+/* Role Visibility (Applies only to nav items and action buttons, never overriding .section) */
+.ops-only{display:none}
+body.role-ops .navgroup.ops-only,
+body.role-ops nav button.ops-only{display:block}
+body.role-ops button.btn.ops-only,
+body.role-ops span.ops-only{display:inline-block}
+
+/* Modal Backdrop */
+.modal-backdrop{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.6);z-index:100;align-items:center;justify-content:center;padding:16px}
+.modal-box{background:#fff;padding:24px;border-radius:12px;width:100%;max-width:650px;max-height:90vh;overflow:auto;box-shadow:0 20px 25px -5px rgba(0,0,0,0.2)}
+
+/* Timeline inside Details Modal */
+.history-list{border-left:2px solid var(--green);margin:10px 0 0 8px;padding-left:16px}
+.history-item{position:relative;margin-bottom:14px}
+.history-item::before{content:"";position:absolute;left:-22px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--green)}
+.info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;background:#f8fafc;padding:14px;border-radius:8px;border:1px solid var(--line);margin-bottom:16px}
+
+/* Login Screen Overlay */
+#login-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:99999}
+.login-card{background:#fff;padding:36px;border-radius:16px;width:100%;max-width:420px;box-shadow:0 10px 25px rgba(0,0,0,0.3);text-align:center}
+.login-logo-container{background:#fff;padding:10px 18px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 4px 6px rgba(0,0,0,0.05);border:1px solid var(--line);min-height:70px;min-width:100px}
+.login-logo-container img{height:54px;width:auto;display:block}
+
+/* Exact Physical Document Matching */
+.doc-box{background:#fff;color:#000;max-width:900px;margin:0 auto;padding:30px;border:2px solid #111;font-family:Arial,sans-serif;font-size:12px;line-height:1.5}
+.doc-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #112238;padding-bottom:12px;margin-bottom:15px}
+.doc-brand{display:flex;gap:12px;align-items:center}
+.doc-brand-logo-container{background:#fff;padding:4px 8px;border-radius:6px;display:flex;align-items:center;justify-content:center;height:48px;min-width:60px;border:1.5px solid var(--navy)}
+.doc-brand-logo-container img{height:36px;width:auto;display:block}
+.doc-title-box{border:2px solid #112238;padding:8px 16px;font-weight:900;font-size:16px;text-align:center;background:#f8fafc;color:#112238}
+.doc-table{width:100%;border-collapse:collapse;margin-top:10px;margin-bottom:15px}
+.doc-table th,.doc-table td{border:1px solid #111;padding:6px 8px;font-size:11px}
+.doc-table th{background:#e2e8f0;text-align:center}
+
+footer{color:var(--muted);font-size:12px;margin-top:30px;text-align:center}
+@media(max-width:900px){.shell{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--line);padding:8px;overflow:auto}nav{display:flex;gap:4px;min-width:max-content}.navgroup{display:none}nav button{width:auto;white-space:nowrap}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.formgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media print{body{background:#fff}.no-print,header,aside{display:none!important}.section{display:none!important}.section#documents{display:block!important}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN MODAL -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo-container">
+      <img src="https://mainlandgroupng.com/wp-content/uploads/2024/03/output-onlinepngtools-3.png" alt="Mainland Group Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span class="logo-fallback" style="display:none; font-size:24px;">MBT</span>
+    </div>
+    <h2 style="margin:0 0 4px 0; color:var(--navy);">Mainland Bonded Terminal</h2>
+    <p class="muted small" style="margin-bottom:20px">Iddo Terminal & Ijora Annex Operations</p>
+    <div style="margin-bottom:14px; text-align:left;">
+      <label>Enter Access PIN *</label>
+      <input id="login-pin" type="password" placeholder="Enter PIN" onkeydown="if(event.key==='Enter') verifyLogin()" style="text-align:center; font-size:18px; letter-spacing:2px;">
+    </div>
+    <button type="button" class="btn primary" onclick="verifyLogin()" style="width:100%; padding:12px; font-size:15px; background:var(--navy); border-color:var(--navy)">Login to System</button>
+    <p class="small muted" style="margin-top:16px">Default PINs:<br>Management (View & Docs): <b>7788</b><br>Operations (Full Access): <b>1122</b></p>
+  </div>
+</div>
+
+<header class="no-print">
+  <div class="brand">
+    <div class="brand-logo-container">
+      <img src="https://mainlandgroupng.com/wp-content/uploads/2024/03/output-onlinepngtools-3.png" alt="Mainland Group Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span class="logo-fallback" style="display:none;">MBT</span>
+    </div>
+    <div><b>Mainland Bonded Terminal Ltd</b><small>Management Operations & Inventory Dashboard</small></div>
+  </div>
+  <div class="right">
+    <div style="text-align:right">
+      <span id="role-badge" class="pill green" style="margin-bottom:4px;">ROLE</span><br>
+      IDDO TERMINAL & IJORA ANNEX · <span id="today"></span>
+    </div>
+    <button class="btn sm" onclick="lockSystem()" style="background:#b93815; color:#fff; border-color:#b93815;">Sign Out</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="no-print">
+    <nav id="nav">
+      <div class="navgroup">MANAGEMENT VIEW</div>
+      <button class="active" data-page="dashboard">▦ Executive Dashboard</button>
+      <button data-page="inventory">▤ Live Terminal Inventory</button>
+      <button data-page="weekly">📊 Weekly Terminal Report</button>
+      
+      <div class="navgroup ops-only">OPERATIONS</div>
+      <button class="ops-only" data-page="gatein">＋ Gate In / Barge In (Arrival)</button>
+      <button class="ops-only" data-page="transfers">⇄ Ijora ➔ Iddo Transfer</button>
+      <button class="ops-only" data-page="gateout">↗ Gate Out / Barge Out (Exit)</button>
+      
+      <div class="navgroup">DOCUMENTS</div>
+      <button data-page="documents">▧ TDO & Exit Waybill</button>
+      
+      <div class="navgroup ops-only">ADMIN & SECURITY</div>
+      <button class="ops-only" data-page="reports">▥ Data & System Backup</button>
+    </nav>
+  </aside>
+  
+  <main>
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="section active">
+      <h1>Executive Dashboard</h1>
+      <p class="sub">Real-time overview of terminal stock across Iddo Main Terminal and Ijora Annex.</p>
+      
+      <div class="grid">
+        <div class="card"><div class="muted small">Total in Terminals</div><div class="metric" id="m-total">0</div><div class="small muted">Iddo + Ijora Annex</div></div>
+        <div class="card"><div class="muted small">Iddo Main Terminal</div><div class="metric" id="m-iddo">0</div><div class="small muted">Ready for delivery</div></div>
+        <div class="card"><div class="muted small">Ijora Annex</div><div class="metric" id="m-ijora">0</div><div class="
