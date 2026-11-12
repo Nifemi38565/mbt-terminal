@@ -513,6 +513,27 @@ function formatCustomDate(dateStr, includeTime) {
   return formatted;
 }
 
+// Keep Arrival movement dates strictly synchronized with item.dateIn
+function syncArrivalMovementDates() {
+  if (!db || !db.items || !db.movements) return false;
+  var changed = false;
+  db.movements.forEach(function(m) {
+    if (m.type === "Arrival") {
+      var matchedItem = db.items.find(function(i) {
+        return i.identifier && m.item && i.identifier.trim().toLowerCase() === m.item.trim().toLowerCase();
+      });
+      if (matchedItem && matchedItem.dateIn && m.date !== matchedItem.dateIn) {
+        m.date = matchedItem.dateIn;
+        m.category = matchedItem.category;
+        m.subtype = matchedItem.subtype;
+        m.client = matchedItem.client;
+        changed = true;
+      }
+    }
+  });
+  return changed;
+}
+
 if (dbRef) {
   dbRef.on("value", function(snapshot) {
     var serverData = snapshot.val();
@@ -520,6 +541,9 @@ if (dbRef) {
       db = serverData;
       if (!db.items) db.items = [];
       if (!db.movements) db.movements = [];
+      if (syncArrivalMovementDates()) {
+        dbRef.set(db);
+      }
     } else {
       db = { items: [], movements: [] };
     }
@@ -530,6 +554,7 @@ if (dbRef) {
 }
 
 function saveDB() {
+  syncArrivalMovementDates();
   if (dbRef) dbRef.set(db);
   window.updateDashboard();
 }
@@ -697,6 +722,7 @@ window.updateDashboard = function() {
 };
 
 function populateWeekSelector() {
+  syncArrivalMovementDates();
   var sel = document.getElementById("week-selector");
   if (!sel) return;
   var currentSelected = sel.value;
@@ -740,7 +766,7 @@ function renderWeeklyReport() {
     return {
       type: m.type,
       item: m.item,
-      date: m.date,
+      date: (m.type === "Arrival" && matchedItem && matchedItem.dateIn) ? matchedItem.dateIn : m.date,
       details: m.details,
       category: m.category || (matchedItem ? matchedItem.category : "Uncategorized"),
       subtype: m.subtype || (matchedItem ? matchedItem.subtype : "-"),
@@ -1046,7 +1072,7 @@ function saveEdit(e) {
     }
 
     (db.movements || []).forEach(function(m) {
-      if (m.item === oldIdentifier) {
+      if (m.item && m.item.trim().toLowerCase() === oldIdentifier.trim().toLowerCase()) {
         m.item = newIdentifier;
         m.category = item.category;
         m.subtype = item.subtype;
@@ -1065,6 +1091,7 @@ function saveEdit(e) {
     saveDB();
     closeEditModal();
     renderInventory();
+    if (document.getElementById("weekly").classList.contains("active")) populateWeekSelector();
     alert("Consignment updated successfully!");
   }
 }
