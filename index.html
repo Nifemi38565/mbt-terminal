@@ -84,7 +84,10 @@ h1{font-size:24px;margin:0 0 4px;color:#0f172a}h2{font-size:16px;margin:0 0 12px
 .btn.primary{background:var(--green);border-color:var(--green);color:#fff}.btn.dark{background:var(--navy);color:#fff;border-color:var(--navy)}.btn.warn{color:#b93815;border-color:#f1d0c5;background:#fef2f2}
 .btn.sm{padding:5px 9px;font-size:11px}
 input,select,textarea{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:9px 12px;font:inherit;background:#fff;color:var(--ink)}
+input[readonly]{background:#f1f5f9;color:#475569;font-weight:700}
 label{font-size:12px;color:#475569;font-weight:700;display:block;margin:0 0 6px}.field{min-width:160px;flex:1}.formgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.na-toggle{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;font-weight:600;color:#475569;cursor:pointer;user-select:none}
+.na-toggle input[type="checkbox"]{width:auto;margin:0;cursor:pointer}
 .tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}table{width:100%;border-collapse:collapse;min-width:750px}th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}th{background:#f8fafc;color:#475569;white-space:nowrap}tr:last-child td{border-bottom:0}
 .pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}.pill.green{background:#ecfccb;color:#3f6212}.pill.orange{background:#ffedd5;color:#9a3412}.pill.blue{background:#e0f2fe;color:#0369a1}.pill.gray{background:#f1f5f9;color:#475569}
 
@@ -307,7 +310,11 @@ footer{color:var(--muted);font-size:12px;margin-top:30px;text-align:center}
             <div class="field"><label>Specific Sub-Type *</label><input id="a-subtype" required placeholder="e.g. Dry Box, Mixer Truck, Excavator, Tanker..."></div>
             <div class="field"><label>Entry Mode *</label><select id="a-mode" required><option>Gate In</option><option>Barge In</option></select></div>
             <div class="field"><label>Initial Location *</label><select id="a-loc" required><option>Ijora Annex</option><option>Iddo Terminal</option></select></div>
-            <div class="field"><label>Item Identifier / VIN / Container No *</label><input id="a-id" required placeholder="Unique Container No / VIN / Chassis"></div>
+            <div class="field">
+              <label>Item Identifier / VIN / Container No *</label>
+              <input id="a-id" required placeholder="Unique Container No / VIN or N/A">
+              <label class="na-toggle"><input type="checkbox" id="a-id-na" onchange="toggleNaVin('a-id', 'a-id-na')"> No VIN / Not Applicable (N/A)</label>
+            </div>
             <div class="field"><label>Client / Consignee *</label><input id="a-client" required placeholder="Client / Agent Name"></div>
             <div class="field"><label>Bill of Lading (BL) / Ref *</label><input id="a-bl" required placeholder="Required BL Number" onblur="checkBLDate(this.value)"></div>
             <div class="field"><label>Date In *</label><input id="a-date" type="datetime-local" required></div>
@@ -445,7 +452,11 @@ footer{color:var(--muted);font-size:12px;margin-top:30px;text-align:center}
         <div class="field"><label>Specific Sub-Type</label><input id="e-subtype" required></div>
         <div class="field"><label>Entry Mode</label><select id="e-mode"><option value="Gate In">Gate In</option><option value="Barge In">Barge In</option></select></div>
         <div class="field"><label>Location</label><select id="e-loc"><option>Iddo Terminal</option><option>Ijora Annex</option><option>Exited Terminal</option></select></div>
-        <div class="field"><label>Identifier / VIN / Container No</label><input id="e-identifier" required></div>
+        <div class="field">
+          <label>Identifier / VIN / Container No</label>
+          <input id="e-identifier" required>
+          <label class="na-toggle"><input type="checkbox" id="e-identifier-na" onchange="toggleNaVin('e-identifier', 'e-identifier-na')"> No VIN / Not Applicable (N/A)</label>
+        </div>
         <div class="field"><label>Client Name</label><input id="e-client" required></div>
         <div class="field"><label>Bill of Lading (BL) *</label><input id="e-bl" required></div>
         <div class="field"><label>Status</label><select id="e-status"><option>In Terminal</option><option>Exited</option></select></div>
@@ -487,6 +498,24 @@ try {
 
 var db = { items: [], movements: [] };
 
+function isNotApplicableVin(val) {
+  return String(val || "").trim().toUpperCase() === "N/A";
+}
+
+function toggleNaVin(inputId, checkboxId) {
+  var inputEl = document.getElementById(inputId);
+  var checkEl = document.getElementById(checkboxId);
+  if (!inputEl || !checkEl) return;
+  if (checkEl.checked) {
+    inputEl.value = "N/A";
+    inputEl.readOnly = true;
+  } else {
+    if (isNotApplicableVin(inputEl.value)) inputEl.value = "";
+    inputEl.readOnly = false;
+    inputEl.focus();
+  }
+}
+
 function formatCustomDate(dateStr, includeTime) {
   if (includeTime === undefined) includeTime = true;
   if (!dateStr) return "-";
@@ -520,7 +549,8 @@ function syncArrivalMovementDates() {
   db.movements.forEach(function(m) {
     if (m.type === "Arrival") {
       var matchedItem = db.items.find(function(i) {
-        return i.identifier && m.item && i.identifier.trim().toLowerCase() === m.item.trim().toLowerCase();
+        if (m.itemId && i.id === m.itemId) return true;
+        return !m.itemId && i.identifier && m.item && i.identifier.trim().toLowerCase() === m.item.trim().toLowerCase();
       });
       if (matchedItem && matchedItem.dateIn && m.date !== matchedItem.dateIn) {
         m.date = matchedItem.dateIn;
@@ -762,7 +792,9 @@ function renderWeeklyReport() {
   });
 
   var enrichedMoves = weekMoves.map(function(m) {
-    var matchedItem = db.items.find(function(i) { return i.identifier === m.item; });
+    var matchedItem = db.items.find(function(i) {
+      return (m.itemId && i.id === m.itemId) || (!m.itemId && i.identifier === m.item);
+    });
     return {
       type: m.type,
       item: m.item,
@@ -817,6 +849,8 @@ function recordArrival(e) {
   if (window.currentRole !== "ops") return;
 
   var rawId = document.getElementById("a-id").value.trim();
+  var isNaVin = isNotApplicableVin(rawId);
+  var cleanId = isNaVin ? "N/A" : rawId;
   var rawBl = document.getElementById("a-bl").value.trim();
 
   if (!rawBl) {
@@ -825,13 +859,16 @@ function recordArrival(e) {
     return;
   }
 
-  var duplicate = db.items.find(function(i) {
-    return i.identifier && i.identifier.trim().toLowerCase() === rawId.toLowerCase();
-  });
-  if (duplicate) {
-    alert('DUPLICATE BLOCKED: Identifier / VIN "' + rawId + '" has already been recorded in the system (Client: ' + duplicate.client + ", Status: " + duplicate.status + ", Date In: " + formatCustomDate(duplicate.dateIn) + ").");
-    document.getElementById("a-id").focus();
-    return;
+  // Enforce uniqueness for real VINs/identifiers while allowing repeated "N/A" for goods without VIN
+  if (!isNaVin) {
+    var duplicate = db.items.find(function(i) {
+      return i.identifier && i.identifier.trim().toLowerCase() === cleanId.toLowerCase();
+    });
+    if (duplicate) {
+      alert('DUPLICATE BLOCKED: Identifier / VIN "' + cleanId + '" has already been recorded in the system (Client: ' + duplicate.client + ", Status: " + duplicate.status + ", Date In: " + formatCustomDate(duplicate.dateIn) + ").");
+      document.getElementById("a-id").focus();
+      return;
+    }
   }
 
   var category = document.getElementById("a-cat").value;
@@ -857,7 +894,7 @@ function recordArrival(e) {
     subtype: subtype,
     entryMode: entryMode,
     location: location,
-    identifier: rawId,
+    identifier: cleanId,
     client: client,
     bl: rawBl,
     dateIn: dateIn,
@@ -879,6 +916,7 @@ function recordArrival(e) {
   db.items.push(newItem);
   db.movements.push({
     type: "Arrival",
+    itemId: newItem.id,
     category: category,
     subtype: subtype,
     client: client,
@@ -890,6 +928,7 @@ function recordArrival(e) {
   saveDB();
   alert("Arrival recorded successfully!");
   document.getElementById("arrival-form").reset();
+  document.getElementById("a-id").readOnly = false;
   toggleContainerFields();
   window.showPage("inventory");
 }
@@ -1015,7 +1054,18 @@ function openEditModal(itemId) {
   document.getElementById("e-subtype").value = item.subtype || "";
   document.getElementById("e-mode").value = item.entryMode || "Gate In";
   document.getElementById("e-loc").value = item.location;
-  document.getElementById("e-identifier").value = item.identifier;
+
+  var idInput = document.getElementById("e-identifier");
+  var naCheck = document.getElementById("e-identifier-na");
+  idInput.value = item.identifier;
+  if (isNotApplicableVin(item.identifier)) {
+    naCheck.checked = true;
+    idInput.readOnly = true;
+  } else {
+    naCheck.checked = false;
+    idInput.readOnly = false;
+  }
+
   document.getElementById("e-client").value = item.client;
   document.getElementById("e-bl").value = item.bl || "";
   document.getElementById("e-status").value = item.status;
@@ -1035,14 +1085,18 @@ function saveEdit(e) {
   e.preventDefault();
   if (window.currentRole !== "ops") return;
   var id = document.getElementById("e-internal-id").value;
-  var newIdentifier = document.getElementById("e-identifier").value.trim();
+  var rawNewIdentifier = document.getElementById("e-identifier").value.trim();
+  var isNaVin = isNotApplicableVin(rawNewIdentifier);
+  var newIdentifier = isNaVin ? "N/A" : rawNewIdentifier;
 
-  var duplicate = db.items.find(function(i) {
-    return i.id !== id && i.identifier && i.identifier.trim().toLowerCase() === newIdentifier.toLowerCase();
-  });
-  if (duplicate) {
-    alert('Cannot save: Another record already uses Identifier / VIN "' + newIdentifier + '".');
-    return;
+  if (!isNaVin) {
+    var duplicate = db.items.find(function(i) {
+      return i.id !== id && i.identifier && i.identifier.trim().toLowerCase() === newIdentifier.toLowerCase();
+    });
+    if (duplicate) {
+      alert('Cannot save: Another record already uses Identifier / VIN "' + newIdentifier + '".');
+      return;
+    }
   }
 
   var item = db.items.find(function(i) { return i.id === id; });
@@ -1072,7 +1126,9 @@ function saveEdit(e) {
     }
 
     (db.movements || []).forEach(function(m) {
-      if (m.item && m.item.trim().toLowerCase() === oldIdentifier.trim().toLowerCase()) {
+      var isMatch = (m.itemId && m.itemId === item.id) || (!m.itemId && m.item && m.item.trim().toLowerCase() === oldIdentifier.trim().toLowerCase());
+      if (isMatch) {
+        m.itemId = item.id;
         m.item = newIdentifier;
         m.category = item.category;
         m.subtype = item.subtype;
@@ -1128,6 +1184,7 @@ function recordTransfer(e) {
     });
     db.movements.push({
       type: "Transfer",
+      itemId: item.id,
       category: item.category,
       subtype: item.subtype,
       client: item.client,
@@ -1179,6 +1236,7 @@ function recordExit(e) {
     });
     db.movements.push({
       type: "Exit",
+      itemId: item.id,
       category: item.category,
       subtype: item.subtype,
       client: item.client,
