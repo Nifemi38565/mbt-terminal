@@ -78,7 +78,10 @@ h1{font-size:24px;margin:0 0 4px;color:#0f172a}h2{font-size:16px;margin:0 0 12px
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
 .card.clickable{cursor:pointer;transition:transform 0.15s, border-color 0.15s;border:1px solid var(--green);background:#fafdf5}
 .card.clickable:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(104,130,41,0.15)}
+.card.alert-card{border:1px solid #fca5a5;background:#fef2f2}
 .metric{font-size:28px;font-weight:800;margin-top:6px;color:#0f172a}.muted{color:var(--muted)}.small{font-size:12px}
+.loc-split{margin-top:6px;font-size:12px;color:#475569;font-weight:600;display:flex;gap:8px;flex-wrap:wrap}
+.loc-split span{background:#f1f5f9;padding:2px 7px;border-radius:6px}
 .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.between{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .btn{border:1px solid #cbd5e1;background:#fff;color:#1e293b;padding:9px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px}
 .btn.primary{background:var(--green);border-color:var(--green);color:#fff}.btn.dark{background:var(--navy);color:#fff;border-color:var(--navy)}.btn.warn{color:#b93815;border-color:#f1d0c5;background:#fef2f2}
@@ -89,7 +92,13 @@ label{font-size:12px;color:#475569;font-weight:700;display:block;margin:0 0 6px}
 .na-toggle{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;font-weight:600;color:#475569;cursor:pointer;user-select:none}
 .na-toggle input[type="checkbox"]{width:auto;margin:0;cursor:pointer}
 .tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}table{width:100%;border-collapse:collapse;min-width:750px}th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}th{background:#f8fafc;color:#475569;white-space:nowrap}tr:last-child td{border-bottom:0}
-.pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}.pill.green{background:#ecfccb;color:#3f6212}.pill.orange{background:#ffedd5;color:#9a3412}.pill.blue{background:#e0f2fe;color:#0369a1}.pill.gray{background:#f1f5f9;color:#475569}
+.pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}.pill.green{background:#ecfccb;color:#3f6212}.pill.orange{background:#ffedd5;color:#9a3412}.pill.blue{background:#e0f2fe;color:#0369a1}.pill.gray{background:#f1f5f9;color:#475569}.pill.red{background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5}
+
+tr.empty-container-row{background:#fef2f2 !important}
+tr.empty-container-row td,
+tr.empty-container-row td b,
+tr.empty-container-row td small,
+tr.empty-container-row td span:not(.pill){color:#b91c1c !important}
 
 .section{display:none}
 .section.active{display:block}
@@ -170,6 +179,7 @@ footer{color:var(--muted);font-size:12px;margin-top:30px;text-align:center}
       <div class="navgroup">MANAGEMENT VIEW</div>
       <button class="active" data-page="dashboard">▦ Executive Dashboard</button>
       <button data-page="inventory">▤ Live Terminal Inventory</button>
+      <button data-page="ijora-history">⇄ Ijora Annex Log & Transfers</button>
       <button data-page="weekly">📊 Weekly Terminal Report</button>
       
       <div class="navgroup ops-only">OPERATIONS</div>
@@ -198,16 +208,44 @@ footer{color:var(--muted);font-size:12px;margin-top:30px;text-align:center}
       </div>
       
       <div class="grid">
-        <div class="card"><div class="muted small">Containers</div><div class="metric" id="m-cont">0</div></div>
-        <div class="card"><div class="muted small">Equipment</div><div class="metric" id="m-equip">0</div></div>
-        <div class="card"><div class="muted small">Trucks</div><div class="metric" id="m-truck">0</div></div>
+        <div class="card">
+          <div class="muted small">Containers</div>
+          <div class="metric" id="m-cont">0</div>
+          <div class="loc-split"><span id="m-cont-iddo">Iddo: 0</span><span id="m-cont-ijora">Ijora: 0</span></div>
+        </div>
+        <div class="card">
+          <div class="muted small">Equipment</div>
+          <div class="metric" id="m-equip">0</div>
+          <div class="loc-split"><span id="m-equip-iddo">Iddo: 0</span><span id="m-equip-ijora">Ijora: 0</span></div>
+        </div>
+        <div class="card">
+          <div class="muted small">Trucks</div>
+          <div class="metric" id="m-truck">0</div>
+          <div class="loc-split"><span id="m-truck-iddo">Iddo: 0</span><span id="m-truck-ijora">Ijora: 0</span></div>
+        </div>
+        <div class="card alert-card">
+          <div class="between">
+            <span class="small" style="color:#b91c1c; font-weight:bold;">EMPTY CONTAINERS</span>
+            <span class="pill red">Available</span>
+          </div>
+          <div class="metric" id="m-empty-cont" style="color:#b91c1c;">0</div>
+          <div class="loc-split">
+            <span id="m-empty-iddo" style="background:#fee2e2;color:#b91c1c;">Iddo: 0</span>
+            <span id="m-empty-ijora" style="background:#fee2e2;color:#b91c1c;">Ijora: 0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid" style="grid-template-columns:1fr;">
         <div class="card clickable" onclick="showPage('weekly')">
           <div class="between">
-            <span class="small" style="color:var(--green); font-weight:bold;">📊 WEEKLY REPORT</span>
-            <span class="pill green">Open ➔</span>
+            <div>
+              <span class="small" style="color:var(--green); font-weight:bold;">📊 WEEKLY TERMINAL REPORT</span>
+              <div class="metric" id="m-week-count" style="font-size:20px; margin-top:4px;">This Week: 0 Movements</div>
+              <div class="small muted">Click here to view weekly breakdown across Containers, Equipment, and Trucks</div>
+            </div>
+            <span class="pill green">Open Report ➔</span>
           </div>
-          <div class="metric" id="m-week-count" style="font-size:22px; margin-top:8px;">This Week: 0</div>
-          <div class="small muted">Click to view category breakdown</div>
         </div>
       </div>
       
@@ -218,6 +256,52 @@ footer{color:var(--muted);font-size:12px;margin-top:30px;text-align:center}
         </div>
         <div id="recent-table" class="tablewrap" style="margin-top:12px"></div>
       </div>
+    </section>
+
+    <section id="ijora-history" class="section">
+      <div class="between">
+        <div>
+          <h1>Ijora Annex Log & Transfers History</h1>
+          <p class="sub">Dedicated log of all cargo received at Ijora Annex—tracking items transferred to Iddo Terminal, exited directly from Ijora, or currently at Ijora.</p>
+        </div>
+        <div class="actions">
+          <button class="btn ops-only" onclick="showPage('transfers')">⇄ Record Ijora ➔ Iddo Transfer</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card"><div class="muted small">Total Ijora-Linked Cargo</div><div class="metric" id="ij-total">0</div><div class="small muted">All-time Ijora arrivals</div></div>
+        <div class="card"><div class="muted small">Currently at Ijora Annex</div><div class="metric" id="ij-current">0</div><div class="small muted">Awaiting transfer or exit</div></div>
+        <div class="card"><div class="muted small">Transferred to Iddo</div><div class="metric" id="ij-transferred">0</div><div class="small muted">Moved to Main Terminal</div></div>
+        <div class="card"><div class="muted small">Exited Directly from Ijora</div><div class="metric" id="ij-exited">0</div><div class="small muted">Gate/Barge Out at Ijora</div></div>
+      </div>
+
+      <div class="row" style="margin-bottom:16px">
+        <div class="field">
+          <label>Search Ijora History</label>
+          <input id="ij-search" placeholder="Search VIN, container, client, BL, driver, truck..." oninput="renderIjoraHistory()">
+        </div>
+        <div class="field" style="max-width:260px;">
+          <label>Movement Outcome Filter</label>
+          <select id="ij-filter" onchange="renderIjoraHistory()">
+            <option value="all">All Ijora Records</option>
+            <option value="transferred">Transferred to Iddo</option>
+            <option value="exited-ijora">Exited Directly at Ijora</option>
+            <option value="at-ijora">Still at Ijora Annex</option>
+          </select>
+        </div>
+        <div class="field" style="max-width:220px;">
+          <label>Category Filter</label>
+          <select id="ij-cat" onchange="renderIjoraHistory()">
+            <option value="">All Categories</option>
+            <option>Containers</option>
+            <option>Equipment</option>
+            <option>Trucks</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="tablewrap"><div id="ijora-history-table"></div></div>
     </section>
 
     <section id="weekly" class="section">
@@ -257,13 +341,13 @@ footer{color:var(--muted);font-size:12px;margin-top:30px;text-align:center}
       <div class="between">
         <div>
           <h1>Live Terminal Inventory</h1>
-          <p class="sub">Sorted by latest arrival date. Click <b>View Details</b> on any item to see driver, condition/remarks, and full movement history.</p>
+          <p class="sub">Sorted by latest arrival date. Empty containers are highlighted in <b style="color:#b91c1c;">red</b>. Click <b>View Details</b> for full movement history.</p>
         </div>
         <div class="actions"><button class="btn" onclick="exportData()">Export JSON Backup</button></div>
       </div>
       
       <div class="row" style="margin-bottom:16px">
-        <div class="field"><label>Search Item / Sub-type / VIN / BL</label><input id="inv-search" placeholder="Type excavator, mixer, VIN, client, BL..." oninput="renderInventory()"></div>
+        <div class="field"><label>Search Item / Sub-type / VIN / BL</label><input id="inv-search" placeholder="Type empty, excavator, mixer, VIN, client, BL..." oninput="renderInventory()"></div>
         <div class="field"><label>Location Filter</label><select id="inv-loc" onchange="renderInventory()"><option value="">All Locations</option><option>Iddo Terminal</option><option>Ijora Annex</option><option>Exited Terminal</option></select></div>
         <div class="field"><label>Category Filter</label><select id="inv-cat" onchange="renderInventory()"><option value="">All Categories</option><option>Containers</option><option>Equipment</option><option>Trucks</option></select></div>
       </div>
@@ -307,7 +391,7 @@ footer{color:var(--muted);font-size:12px;margin-top:30px;text-align:center}
               </select>
             </div>
 
-            <div class="field"><label>Specific Sub-Type *</label><input id="a-subtype" required placeholder="e.g. Dry Box, Mixer Truck, Excavator, Tanker..."></div>
+            <div class="field"><label>Specific Sub-Type *</label><input id="a-subtype" required placeholder="e.g. Empty, Dry Box, Mixer Truck, Excavator..."></div>
             <div class="field"><label>Entry Mode *</label><select id="a-mode" required><option>Gate In</option><option>Barge In</option></select></div>
             <div class="field"><label>Initial Location *</label><select id="a-loc" required><option>Ijora Annex</option><option>Iddo Terminal</option></select></div>
             <div class="field">
@@ -498,6 +582,11 @@ try {
 
 var db = { items: [], movements: [] };
 
+function isEmptyContainer(item) {
+  if (!item || item.category !== "Containers") return false;
+  return String(item.subtype || "").toLowerCase().indexOf("empty") !== -1;
+}
+
 function isNotApplicableVin(val) {
   return String(val || "").trim().toUpperCase() === "N/A";
 }
@@ -542,7 +631,6 @@ function formatCustomDate(dateStr, includeTime) {
   return formatted;
 }
 
-// Keep Arrival movement dates strictly synchronized with item.dateIn
 function syncArrivalMovementDates() {
   if (!db || !db.items || !db.movements) return false;
   var changed = false;
@@ -579,6 +667,7 @@ if (dbRef) {
     }
     window.updateDashboard();
     if (document.getElementById("inventory").classList.contains("active")) renderInventory();
+    if (document.getElementById("ijora-history").classList.contains("active")) renderIjoraHistory();
     if (document.getElementById("weekly").classList.contains("active")) populateWeekSelector();
   });
 }
@@ -625,6 +714,7 @@ document.querySelectorAll("nav button").forEach(function(btn) {
     if (target) target.classList.add("active");
 
     if (targetPage === "inventory") renderInventory();
+    if (targetPage === "ijora-history") renderIjoraHistory();
     if (targetPage === "weekly") populateWeekSelector();
     if (targetPage === "transfers") populateTransferSelect();
     if (targetPage === "gateout") populateExitSelect();
@@ -704,28 +794,55 @@ function formatWeekLabel(mondayStr) {
 
 window.updateDashboard = function() {
   var items = db.items || [];
-  var total = items.filter(function(i) { return i.status === "In Terminal"; }).length;
-  var iddo = items.filter(function(i) { return i.status === "In Terminal" && i.location === "Iddo Terminal"; }).length;
-  var ijora = items.filter(function(i) { return i.status === "In Terminal" && i.location === "Ijora Annex"; }).length;
+  var inTerminal = items.filter(function(i) { return i.status === "In Terminal"; });
+
+  var total = inTerminal.length;
+  var iddo = inTerminal.filter(function(i) { return i.location === "Iddo Terminal"; }).length;
+  var ijora = inTerminal.filter(function(i) { return i.location === "Ijora Annex"; }).length;
   var exited = items.filter(function(i) { return i.status === "Exited"; }).length;
 
-  var cont = items.filter(function(i) { return i.status === "In Terminal" && i.category === "Containers"; }).length;
-  var equip = items.filter(function(i) { return i.status === "In Terminal" && i.category === "Equipment"; }).length;
-  var truck = items.filter(function(i) { return i.status === "In Terminal" && i.category === "Trucks"; }).length;
+  var contItems = inTerminal.filter(function(i) { return i.category === "Containers"; });
+  var contIddo = contItems.filter(function(i) { return i.location === "Iddo Terminal"; }).length;
+  var contIjora = contItems.filter(function(i) { return i.location === "Ijora Annex"; }).length;
+
+  var equipItems = inTerminal.filter(function(i) { return i.category === "Equipment"; });
+  var equipIddo = equipItems.filter(function(i) { return i.location === "Iddo Terminal"; }).length;
+  var equipIjora = equipItems.filter(function(i) { return i.location === "Ijora Annex"; }).length;
+
+  var truckItems = inTerminal.filter(function(i) { return i.category === "Trucks"; });
+  var truckIddo = truckItems.filter(function(i) { return i.location === "Iddo Terminal"; }).length;
+  var truckIjora = truckItems.filter(function(i) { return i.location === "Ijora Annex"; }).length;
+
+  var emptyContItems = inTerminal.filter(isEmptyContainer);
+  var emptyContIddo = emptyContItems.filter(function(i) { return i.location === "Iddo Terminal"; }).length;
+  var emptyContIjora = emptyContItems.filter(function(i) { return i.location === "Ijora Annex"; }).length;
 
   document.getElementById("m-total").innerText = total;
   document.getElementById("m-iddo").innerText = iddo;
   document.getElementById("m-ijora").innerText = ijora;
   document.getElementById("m-exited").innerText = exited;
-  document.getElementById("m-cont").innerText = cont;
-  document.getElementById("m-equip").innerText = equip;
-  document.getElementById("m-truck").innerText = truck;
+
+  document.getElementById("m-cont").innerText = contItems.length;
+  document.getElementById("m-cont-iddo").innerText = "Iddo: " + contIddo;
+  document.getElementById("m-cont-ijora").innerText = "Ijora: " + contIjora;
+
+  document.getElementById("m-equip").innerText = equipItems.length;
+  document.getElementById("m-equip-iddo").innerText = "Iddo: " + equipIddo;
+  document.getElementById("m-equip-ijora").innerText = "Ijora: " + equipIjora;
+
+  document.getElementById("m-truck").innerText = truckItems.length;
+  document.getElementById("m-truck-iddo").innerText = "Iddo: " + truckIddo;
+  document.getElementById("m-truck-ijora").innerText = "Ijora: " + truckIjora;
+
+  document.getElementById("m-empty-cont").innerText = emptyContItems.length;
+  document.getElementById("m-empty-iddo").innerText = "Iddo: " + emptyContIddo;
+  document.getElementById("m-empty-ijora").innerText = "Ijora: " + emptyContIjora;
 
   var currentWeekKey = getMondayKey(new Date().toISOString());
   var thisWeekMoves = (db.movements || []).filter(function(m) {
     return getMondayKey(m.date) === currentWeekKey;
   }).length;
-  document.getElementById("m-week-count").innerText = "This Week: " + thisWeekMoves;
+  document.getElementById("m-week-count").innerText = "This Week: " + thisWeekMoves + " Movements";
 
   var sortedRecent = sortByLatestDateIn(items).slice(0, 6);
   var html = "<table><thead><tr><th>S/N<\/th><th>Date In<\/th><th>Category / Sub-Type<\/th><th>Identifier / VIN<\/th><th>Client<\/th><th>Location<\/th><th>Status<\/th><\/tr><\/thead><tbody>";
@@ -734,12 +851,15 @@ window.updateDashboard = function() {
   } else {
     sortedRecent.forEach(function(i, idx) {
       var isContainer = i.category === "Containers";
-      var sizeBadge = (isContainer && i.size) ? ' <span class="pill gray">' + i.size + "<\/span>" : "";
+      var emptyFlag = isEmptyContainer(i);
+      var rowClass = emptyFlag ? ' class="empty-container-row"' : "";
+      var sizeBadge = (isContainer && i.size) ? ' <span class="pill ' + (emptyFlag ? "red" : "gray") + '">' + i.size + "<\/span>" : "";
+      var emptyBadge = emptyFlag ? ' <span class="pill red">EMPTY<\/span>' : "";
       var classLabel = (isContainer && i.classification) ? " (" + i.classification + ")" : "";
-      html += "<tr>" +
+      html += "<tr" + rowClass + ">" +
         "<td><b>" + (idx + 1) + "<\/b><\/td>" +
         "<td>" + formatCustomDate(i.dateIn) + "<\/td>" +
-        '<td><span class="pill blue">' + i.category + "<\/span>" + sizeBadge + "<br><small><b>" + i.subtype + "<\/b>" + classLabel + "<\/small><\/td>" +
+        '<td><span class="pill ' + (emptyFlag ? "red" : "blue") + '">' + i.category + "<\/span>" + sizeBadge + emptyBadge + "<br><small><b>" + i.subtype + "<\/b>" + classLabel + "<\/small><\/td>" +
         "<td><b>" + i.identifier + "<\/b><\/td>" +
         "<td>" + i.client + "<\/td>" +
         "<td>" + i.location + "<\/td>" +
@@ -750,6 +870,148 @@ window.updateDashboard = function() {
   html += "<\/tbody><\/table>";
   document.getElementById("recent-table").innerHTML = html;
 };
+
+function getIjoraRecordProfile(item) {
+  var history = item.history || [];
+  var arrivalEntry = history.find(function(h) {
+    return h.action && h.action.indexOf("Arrived via ") === 0;
+  });
+  var transferEntry = history.find(function(h) {
+    return h.action && h.action.indexOf("Transferred from Ijora Annex") === 0;
+  });
+  var exitFromIjoraEntry = history.find(function(h) {
+    return h.action && (h.action.indexOf("Gate Out from Ijora Annex") === 0 || h.action.indexOf("Barge Out from Ijora Annex") === 0);
+  });
+  var anyExitEntry = history.find(function(h) {
+    return h.action && (h.action.indexOf("Gate Out from ") === 0 || h.action.indexOf("Barge Out from ") === 0);
+  });
+
+  var arrivedAtIjora = (arrivalEntry && arrivalEntry.action.indexOf("at Ijora Annex") !== -1) ||
+                       item.location === "Ijora Annex" ||
+                       Boolean(transferEntry) ||
+                       Boolean(exitFromIjoraEntry);
+
+  if (!arrivedAtIjora) return null;
+
+  var outcome = "at-ijora";
+  if (transferEntry) {
+    outcome = "transferred";
+  } else if (exitFromIjoraEntry || (item.status === "Exited" && !transferEntry)) {
+    outcome = "exited-ijora";
+  }
+
+  return {
+    item: item,
+    outcome: outcome,
+    arrivalEntry: arrivalEntry || null,
+    transferEntry: transferEntry || null,
+    exitEntry: exitFromIjoraEntry || anyExitEntry || null
+  };
+}
+
+function renderIjoraHistory() {
+  var profiles = sortByLatestDateIn(db.items || []).map(getIjoraRecordProfile).filter(Boolean);
+
+  var totalCount = profiles.length;
+  var currentCount = profiles.filter(function(p) { return p.outcome === "at-ijora"; }).length;
+  var transferredCount = profiles.filter(function(p) { return p.outcome === "transferred"; }).length;
+  var exitedIjoraCount = profiles.filter(function(p) { return p.outcome === "exited-ijora"; }).length;
+
+  document.getElementById("ij-total").innerText = totalCount;
+  document.getElementById("ij-current").innerText = currentCount;
+  document.getElementById("ij-transferred").innerText = transferredCount;
+  document.getElementById("ij-exited").innerText = exitedIjoraCount;
+
+  var search = (document.getElementById("ij-search").value || "").toLowerCase();
+  var outcomeFilter = document.getElementById("ij-filter").value;
+  var catFilter = document.getElementById("ij-cat").value;
+
+  var filtered = profiles.filter(function(p) {
+    var i = p.item;
+    if (outcomeFilter !== "all" && p.outcome !== outcomeFilter) return false;
+    if (catFilter && i.category !== catFilter) return false;
+    if (search) {
+      var transferText = p.transferEntry ? (p.transferEntry.driver + " " + p.transferEntry.vehicle + " " + p.transferEntry.notes) : "";
+      var exitText = p.exitEntry ? (p.exitEntry.action + " " + p.exitEntry.driver + " " + p.exitEntry.vehicle + " " + p.exitEntry.notes) : "";
+      var hay = (i.identifier + " " + i.client + " " + i.subtype + " " + (i.bl || "") + " " + (i.driver || "") + " " + (i.transport || "") + " " + transferText + " " + exitText).toLowerCase();
+      if (hay.indexOf(search) === -1) return false;
+    }
+    return true;
+  });
+
+  var html = "<table><thead><tr>" +
+    "<th>S/N<\/th>" +
+    "<th>Cargo & Identifier / VIN<\/th>" +
+    "<th>Client & BL<\/th>" +
+    "<th>Ijora Arrival Details<\/th>" +
+    "<th>Transfer to Iddo Details<\/th>" +
+    "<th>Exit Details<\/th>" +
+    "<th>Outcome / Current Status<\/th>" +
+    "<th>Actions<\/th>" +
+  "<\/tr><\/thead><tbody>";
+
+  if (filtered.length === 0) {
+    html += '<tr><td colspan="8" style="text-align:center; color:#64748b; padding:30px;">No Ijora Annex records match your filter.<\/td><\/tr>';
+  } else {
+    filtered.forEach(function(p, idx) {
+      var i = p.item;
+      var isContainer = i.category === "Containers";
+      var emptyFlag = isEmptyContainer(i);
+      var rowClass = emptyFlag ? ' class="empty-container-row"' : "";
+      var sizeBadge = (isContainer && i.size) ? " • <b>" + i.size + "<\/b>" : "";
+      var classBadge = (isContainer && i.classification) ? ' <span class="pill ' + (emptyFlag ? "red" : "gray") + '">' + i.classification + "<\/span>" : "";
+      var emptyBadge = emptyFlag ? ' <span class="pill red">EMPTY CONTAINER<\/span>' : "";
+
+      var arrivalCol = "<b>" + formatCustomDate(i.dateIn) + "<\/b><br>" +
+        '<span class="small muted">Mode: ' + (i.entryMode || "Gate In") + "<\/span>" +
+        (i.driver ? '<br><span class="small">Driver: ' + i.driver + "<\/span>" : "") +
+        (i.transport ? '<br><span class="small muted">Ref: ' + i.transport + "<\/span>" : "");
+
+      var transferCol = '<span class="muted small">— Not transferred —<\/span>';
+      if (p.transferEntry) {
+        transferCol = "<b>" + formatCustomDate(p.transferEntry.date) + "<\/b>" +
+          (p.transferEntry.vehicle && p.transferEntry.vehicle !== "-" ? '<br><span class="small">Truck: ' + p.transferEntry.vehicle + "<\/span>" : "") +
+          (p.transferEntry.driver && p.transferEntry.driver !== "-" ? '<br><span class="small">Driver: ' + p.transferEntry.driver + "<\/span>" : "") +
+          (p.transferEntry.notes ? '<br><span class="small muted">' + p.transferEntry.notes + "<\/span>" : "");
+      }
+
+      var exitCol = '<span class="muted small">— Still in terminal —<\/span>';
+      if (p.exitEntry) {
+        exitCol = "<b>" + formatCustomDate(p.exitEntry.date) + "<\/b><br>" +
+          '<span class="small">' + p.exitEntry.action + "<\/span>" +
+          (p.exitEntry.vehicle && p.exitEntry.vehicle !== "-" ? '<br><span class="small">Truck: ' + p.exitEntry.vehicle + "<\/span>" : "") +
+          (p.exitEntry.notes ? '<br><span class="small muted">' + p.exitEntry.notes + "<\/span>" : "");
+      } else if (i.status === "Exited") {
+        exitCol = '<span class="small">Exited (' + i.location + ")<\/span>";
+      }
+
+      var statusBadge = "";
+      if (p.outcome === "transferred") {
+        statusBadge = '<span class="pill orange">Transferred to Iddo<\/span><br><small class="muted">Now: ' + i.location + " (" + i.status + ")<\/small>";
+      } else if (p.outcome === "exited-ijora") {
+        statusBadge = '<span class="pill blue">Exited at Ijora<\/span><br><small class="muted">Direct exit from Annex<\/small>';
+      } else {
+        statusBadge = '<span class="pill green">At Ijora Annex<\/span><br><small class="muted">In Terminal<\/small>';
+      }
+
+      html += "<tr" + rowClass + ">" +
+        "<td><b>" + (idx + 1) + "<\/b><\/td>" +
+        '<td><span class="pill ' + (emptyFlag ? "red" : "blue") + '">' + i.category + "<\/span>" + sizeBadge + classBadge + emptyBadge +
+          '<br><b style="font-size:12px">' + i.subtype + "<\/b>" +
+          "<br><b>" + i.identifier + "<\/b><\/td>" +
+        "<td><b>" + i.client + '<\/b><br><small class="muted">BL: ' + (i.bl || "-") + "<\/small><\/td>" +
+        "<td>" + arrivalCol + "<\/td>" +
+        "<td>" + transferCol + "<\/td>" +
+        "<td>" + exitCol + "<\/td>" +
+        "<td>" + statusBadge + "<\/td>" +
+        '<td style="white-space:nowrap;"><button class="btn sm" onclick="openDetailsModal(\'' + i.id + "')\">View Full History<\/button><\/td>" +
+      "<\/tr>";
+    });
+  }
+
+  html += "<\/tbody><\/table>";
+  document.getElementById("ijora-history-table").innerHTML = html;
+}
 
 function populateWeekSelector() {
   syncArrivalMovementDates();
@@ -859,7 +1121,6 @@ function recordArrival(e) {
     return;
   }
 
-  // Enforce uniqueness for real VINs/identifiers while allowing repeated "N/A" for goods without VIN
   if (!isNaVin) {
     var duplicate = db.items.find(function(i) {
       return i.identifier && i.identifier.trim().toLowerCase() === cleanId.toLowerCase();
@@ -959,8 +1220,11 @@ function renderInventory() {
   } else {
     filtered.forEach(function(i, index) {
       var isContainer = i.category === "Containers";
+      var emptyFlag = isEmptyContainer(i);
+      var rowClass = emptyFlag ? ' class="empty-container-row"' : "";
       var sizeText = (isContainer && i.size) ? " • <b>" + i.size + "<\/b>" : "";
-      var classText = (isContainer && i.classification) ? ' <span class="pill gray">' + i.classification + "<\/span>" : "";
+      var classText = (isContainer && i.classification) ? ' <span class="pill ' + (emptyFlag ? "red" : "gray") + '">' + i.classification + "<\/span>" : "";
+      var emptyBadge = emptyFlag ? ' <span class="pill red">EMPTY CONTAINER<\/span>' : "";
 
       var actionButtons = '<button class="btn sm" onclick="openDetailsModal(\'' + i.id + "')\">View Details<\/button> ";
 
@@ -971,9 +1235,9 @@ function renderInventory() {
         }
       }
 
-      html += "<tr>" +
+      html += "<tr" + rowClass + ">" +
         "<td><b>" + (index + 1) + "<\/b><\/td>" +
-        '<td><span class="pill blue">' + i.category + "<\/span>" + sizeText + classText + '<br><b style="color:var(--navy);font-size:12px">' + i.subtype + "<\/b><\/td>" +
+        '<td><span class="pill ' + (emptyFlag ? "red" : "blue") + '">' + i.category + "<\/span>" + sizeText + classText + emptyBadge + '<br><b style="font-size:12px">' + i.subtype + "<\/b><\/td>" +
         "<td><b>" + i.identifier + '<\/b><br><small class="muted">' + (i.entryMode || "Gate In") + "<\/small><\/td>" +
         "<td>" + i.client + "<\/td>" +
         "<td>" + (i.bl || "-") + "<\/td>" +
@@ -993,8 +1257,10 @@ function openDetailsModal(itemId) {
   if (!item) return;
 
   var isContainer = item.category === "Containers";
+  var emptyFlag = isEmptyContainer(item);
 
-  document.getElementById("det-title").innerText = item.subtype + " — " + item.identifier;
+  document.getElementById("det-title").innerText = item.subtype + " — " + item.identifier + (emptyFlag ? " [EMPTY CONTAINER]" : "");
+  document.getElementById("det-title").style.color = emptyFlag ? "#b91c1c" : "";
   document.getElementById("det-subtitle").innerText = "Client: " + item.client + " | BL: " + (item.bl || "N/A") + " | Current Status: " + item.status;
 
   var containerFields = isContainer
@@ -1003,7 +1269,7 @@ function openDetailsModal(itemId) {
     : "";
 
   document.getElementById("det-info-grid").innerHTML =
-    '<div><span class="small muted">Consignment Category<\/span><br><b>' + item.category + "<\/b><\/div>" +
+    '<div><span class="small muted">Consignment Category<\/span><br><b>' + item.category + (emptyFlag ? ' <span class="pill red">EMPTY</span>' : "") + "<\/b><\/div>" +
     '<div><span class="small muted">Entry Mode<\/span><br><b>' + (item.entryMode || "Gate In") + "<\/b><\/div>" +
     containerFields +
     '<div><span class="small muted">Current Location<\/span><br><b>' + item.location + "<\/b><\/div>" +
@@ -1142,11 +1408,12 @@ function saveEdit(e) {
     item.history.push({
       action: "Record updated by Operations",
       date: new Date().toISOString().slice(0, 16),
-      notes: "Entry Mode: " + item.entryMode + " | Location: " + item.location + " | Status: " + item.status
+      notes: "Sub-Type: " + item.subtype + " | Entry Mode: " + item.entryMode + " | Location: " + item.location + " | Status: " + item.status
     });
     saveDB();
     closeEditModal();
     renderInventory();
+    if (document.getElementById("ijora-history").classList.contains("active")) renderIjoraHistory();
     if (document.getElementById("weekly").classList.contains("active")) populateWeekSelector();
     alert("Consignment updated successfully!");
   }
@@ -1195,7 +1462,7 @@ function recordTransfer(e) {
     saveDB();
     alert("Transfer recorded! Original arrival date preserved and movement logged in history.");
     document.getElementById("transfer-form").reset();
-    window.showPage("inventory");
+    window.showPage("ijora-history");
   }
 }
 
